@@ -1,0 +1,118 @@
+--  Author: Cole Clements, cclements2016@my.fit.edu
+--  Course: CSE 4250, Spring 2019
+--  Project: Proj3, Panther Party
+--  'gnat --version':  (GCC) 7.3.1 20180524 (for GNAT Community 2018 (20180523-73))
+
+with Ada.Text_IO; use Ada.Text_IO;
+with Ada.Containers.Synchronized_Queue_Interfaces;
+with Ada.Containers.Unbounded_Priority_Queues; use Ada.Containers;
+package body Dijkstra is
+
+    -- Create Graph
+    function makeGraph (Edges : in EdgeList) return node_graph is
+
+    procedure Dijkstra (Graph : in out node_graph; Start : node) is
+        function Get_Priority (node : node_info) return Integer is
+        begin
+            return node.distance;
+        end Get_Priority;
+        function Before (Left, Right : Integer) return Boolean is
+        begin
+            return Left < Right;
+        end Before;
+
+        package PRQ_Interface is
+               new Ada.Containers.Synchronized_Queue_Interfaces (Element_Type => node_info);
+        package Unbounded_PRQ_Interface is
+               new Ada.Containers.Unbounded_Priority_Queues (Queue_Interfaces => PRQ_Interface, Queue_Priority => Integer);
+        PRQ : Unbounded_PRQ_Interface.Queue;
+        curNode : node_info;
+        saftey : Integer := 50;
+    begin
+        -- reset distances and visits for new path
+        for node of Graph loop
+            node.distance := Integer'Last;
+            node.visited := False;
+            Put_Line(Integer'Image(node.distance));  -- Debug for later
+        end loop;
+
+        Graph(Start).distance := 0;
+        Graph(Start).visited := True;
+        PRQ.Enqueue(Graph(Start));
+
+        while PRQ.Current_Use > 0 and saftey > 0 loop
+            Put_Line("start");
+
+            PRQ.Dequeue(curNode);
+            Graph(curNode.self).visited := True;
+            declare
+                procedure iterate_test (Pos : in NextNodeList.Cursor) is
+                    use NextNodeList;
+                    N_node : node := Key (Pos);
+                    newDis : Integer;
+                begin
+                    Put_Line("Panter den " & node'Image(Key(Pos)));
+                    Put_Line("Visit Status " & Boolean'Image(Graph(N_node).visited));
+                    Put_Line("Distance from start of prev node " & Integer'Image(curNode.distance));
+                    Put_Line("dis from start" & Integer'Image(Graph(N_node).distance));
+                    Put_Line("dis from prev node " & Integer'Image(Element(Pos)));
+
+
+                    newDis := Element(Pos) + curNode.distance;
+
+                    if newDis <  Graph(N_node).distance then
+                        Graph(N_node).distance := newDis;
+                        Put_Line("new dis from start " & Integer'Image(Graph(N_node).distance));
+                    else
+                        Put_Line("Not updated");
+                    end if;
+
+                    if not Graph(N_node).visited then
+                        PRQ.Enqueue(Graph(N_node));
+                        Put_Line("Can add");
+                    end if;
+                    New_Line;
+                end iterate_test;
+            begin
+                Put_Line("Current Den is " & Node'Image(curNode.self) & " Currently dis from start " & Integer'Image(curNode.distance) & " Visit Status check " & Boolean'Image(curNode.visited));
+                curNode.nextNodes.Iterate(iterate_test'Access);
+                New_Line;
+                New_Line;
+                saftey := saftey - 1;
+            end;
+        end loop;
+    end Dijkstra;
+
+
+    function pathDistance (Graph : in out node_graph;
+                           Start_Node, End_Node : node) return Integer is
+    begin
+        Dijkstra(Graph, Start_Node);
+        for node of Graph loop
+            if node.self = End_Node then
+                Put_Line("ENTERED");
+                Put_Line(Integer'Image(node.distance));
+                New_Line;
+                return path : Integer := node.distance;
+            end if;
+        end loop;
+        return path : Integer := 0;
+    end pathDistance;
+
+    function disFromNode (Graph : in out node_graph;
+                          Start_Node: node; len : Integer) return distance_list is
+        path : distance_list(0..len-1);
+        pos : Integer := 0;
+    begin
+        Put_Line("Distances Back from Party");
+        Dijkstra(Graph, Start_Node);
+        for node of Graph loop
+            path(pos) := node.distance;
+            pos := pos + 1;
+            Put_Line(Integer'Image(node.distance));  -- Debug for later
+        end loop;
+        New_Line;
+        return path;
+    end disFromNode;
+
+end Dijkstra;
