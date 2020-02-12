@@ -1,0 +1,57 @@
+module Main where
+
+data Tree a = Empty | Node a (Tree a) (Tree a) deriving (Show)
+
+
+
+
+createTree :: [Char] -> Tree Char
+createTree [] = Empty
+createTree [x] = Node x Empty Empty
+createTree (x:rest) = Node x (createTree rest) (createTree rest)
+
+sepInput :: [Char] -> [Char]
+sepInput input = let inputLines = lines input
+                     encoding = head inputLines
+                     decodings = tail inputLines
+                     encodeTree = createTree(encoding)
+                 in  unlines . map (decode, decodings)
+
+main :: IO()
+main = interact (sepInput)
+
+
+main = print $ createTree ['*','*','B','*','*','D','E','C','A']
+
+(Branch (Branch (Leaf 'B') (Branch (Branch (Leaf 'D') (Leaf 'E')) (Leaf 'C'))) (Leaf 'A'),"")
+
+
+-- copy start
+stringBuilder :: Tree -> [Char] -> [Char]
+stringBuilder t s
+    | s == [] = []
+    | otherwise =   let c  = fst (decode t s)
+                        xs = snd (decode t s)
+                    in c ++ (stringBuilder t xs)
+
+decode :: Tree -> [Char] -> ([Char], [Char])
+decode (Leaf c)     (x:xs) = ([c], x:xs)
+decode (Leaf c)       []   = ([c], [])
+decode (Branch a b) (x:xs) =
+    case x of
+        '0' -> decode a xs
+        '1' -> decode b xs
+        _   -> undefined
+
+lineIterator :: ([Char] -> [Char]) -> [[Char]] -> [Char]
+lineIterator func otherLines =
+    unlines (map func otherLines)
+--copy end
+
+
+
+--My dump code 
+iterater :: ([Char] -> [Char]) -> [String] -> [Char]
+iterater function decodings = unlines (map function decodings)
+
+               --in iterater (decoder encodedTree) decodings --backup
